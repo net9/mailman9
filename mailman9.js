@@ -1,6 +1,7 @@
 var events = require('events');
 var util = require('util');
 var child_process = require('child_process');
+var fs = require('fs');
 var config = require('./config');
 
 function Mailman9 () {
@@ -290,6 +291,9 @@ function inArray (arr, elem) {
   return false;
 }
 
+
+var logFile = fs.createWriteStream(config.logFile, {flags: 'a'});
 function writeLog (error) {
+  logFile.write('[' + new Date() + '] ' + error + '\n');
   console.log(error);
 }

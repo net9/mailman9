@@ -77,6 +77,7 @@ mailman9.on('data', function (data) {
   });
   var users = {};
   data.users.forEach(function (user) {
+    user.email = user.email.toLowerCase();
     users[user.name] = user;
     user.allGroups.forEach(function (group) {
       if (group.name == 'root') {

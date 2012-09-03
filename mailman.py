@@ -14,7 +14,7 @@ def getMembers(mlist):
 
 def addMember(mlist, userTitle, email):
   userdesc = UserDesc(userTitle, email)
-  mlist.ApprovedAddMember(userdesc, ack=True, admin_notif=False)
+  mlist.ApprovedAddMember(userdesc, ack=False, admin_notif=False)
   mlist.Save()
   mlist.Unlock()
 

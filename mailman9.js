@@ -22,6 +22,37 @@ Mailman9.prototype.addNewList = function (listName, callback) {
   });
 };
 
+Mailman9.prototype.configList = function (name, title, desc, callback) {
+  var moderation = 'False';
+  if (name == 'authorized' || name == 'class' || name == 'sast' || name == 'su' || name == 'cyl') {
+    moderation = 'True';
+  }
+  desc = desc.replace('\n', ' ');
+  desc = desc.replace('\r', '');
+  var cfg = "#coding: utf-8\n";
+  cfg += "description = '" + desc + "'\n";
+  cfg += "subject_prefix = '[" + title + "] '\n";
+  cfg += "default_member_moderation = " + moderation + "\n";
+  cfg += "reply_goes_to_list = 1\n";
+  cfg += "send_welcome_msg = False\n";
+  cfg += "send_goodbye_msg = False\n";
+  cfg += "max_message_size = 1000\n";
+  cfg += "preferred_language = 'zh_CN'\n";
+  cfg += "available_languages = ['zh_CN', 'en']\n";
+  cfg += "generic_nonmember_action = 1\n";
+  cfg += "subscribe_policy = 3\n";
+
+  var filename = '/tmp/mailman9listcfg_' + name + '.cfg';
+  fs.writeFile(filename, cfg, function (err) {
+    if (err) return callback(err);
+    var cmd = 'config_list -i ' + filename + ' ' + name;
+    child_process.exec(cmd, function (err) {
+      writeLog('Configure list:' + name);
+      callback(err);
+    });
+  });
+};
+
 Mailman9.prototype.removeList = function (listName, callback) {
   writeLog('Delete list: ' + listName);
   var cmd = 'rmlist ' + listName;
@@ -74,6 +105,10 @@ mailman9.on('data', function (data) {
       return;
     }
     groups[group.name] = group;
+    if (!group.allUsers) {
+      group.allUsers = [];
+    }
+    addArray(group.allUsers, group.admins);
   });
   var users = {};
   data.users.forEach(function (user) {
@@ -86,7 +121,9 @@ mailman9.on('data', function (data) {
       if (!groups[group.name].allUsers) {
         groups[group.name].allUsers = [];
       }
-      groups[group.name].allUsers.push(user.name);
+      if (!inArray(groups[group.name].allUsers, user.name)) {
+        groups[group.name].allUsers.push(user.name);
+      }
     });
     if (user.name == 'net9') {
       mailman9.rootAdminEmail = user.email;
@@ -168,7 +205,16 @@ mailman9.on('synclists', function () {
     if (group.name == 'root') {
       return;
     }
-    mailman9.emit('addnewlistadmin', group);
+    mailman9.emit('configlist', group);
+  });
+});
+
+mailman9.on('configlist', function (group) {
+  mailman9.configList(group.name, group.title, group.desc, function (err) {
+    if (err) {
+      writeLog(err);
+    }
+    mailman9.emit('addnewlistadmin', group); 
   });
 });
 
@@ -292,6 +338,11 @@ function inArray (arr, elem) {
   return false;
 }
 
+function addArray(dest, src) {
+  src.forEach(function (elem) {
+    dest.push(elem);
+  });
+}
 
 var logFile = fs.createWriteStream(config.logFile, {flags: 'a'});
 function writeLog (error) {

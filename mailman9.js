@@ -47,7 +47,7 @@ Mailman9.prototype.configList = function (name, title, desc, callback) {
     if (err) return callback(err);
     var cmd = 'config_list -i ' + filename + ' ' + name;
     child_process.exec(cmd, function (err) {
-      writeLog('Configure list:' + name);
+      //writeLog('Configure list:' + name);
       callback(err);
     });
   });
@@ -79,6 +79,9 @@ Mailman9.prototype.delAdmin = function (listName, email, callback) {
 
 Mailman9.prototype.addMember = function (listName, fullname, email, callback) {
   writeLog('Add member: ' + listName + ' ' + email);
+  if (!fullname) {
+    fullname = email;
+  }
   var cmd = 'python mailman.py addmember ' + listName + ' ' + fullname + ' ' + email;
   var listsCmd = child_process.exec(cmd, function (err) {
     callback(err);

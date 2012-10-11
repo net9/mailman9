@@ -34,9 +34,9 @@ Mailman9.prototype.configList = function (name, title, desc, callback) {
   cfg += "subject_prefix = '[" + title + "] '\n";
   cfg += "default_member_moderation = " + moderation + "\n";
   cfg += "reply_goes_to_list = 1\n";
-  cfg += "send_welcome_msg = False\n";
+  cfg += "send_welcome_msg = True\n";
   cfg += "send_goodbye_msg = False\n";
-  cfg += "max_message_size = 1000\n";
+  cfg += "max_message_size = 20000\n";
   cfg += "preferred_language = 'zh_CN'\n";
   cfg += "available_languages = ['zh_CN', 'en']\n";
   cfg += "generic_nonmember_action = 1\n";

@@ -18,6 +18,13 @@ def addMember(mlist, userTitle, email):
   mlist.Save()
   mlist.Unlock()
 
+def addSendMember(mlist, userTitle, email):
+  userdesc = UserDesc(userTitle, email)
+  mlist.ApprovedAddMember(userdesc, ack=False, admin_notif=False)
+  mlist.setDeliveryStatus(email, 1)
+  mlist.Save()
+  mlist.Unlock()
+
 def delMember(mlist, email):
   mlist.DeleteMember(email, userack=True, admin_notif=False)
   mlist.Save()
@@ -48,6 +55,8 @@ def main():
       getMembers(mlist)
     elif method == 'addmember':
       addMember(mlist, args[2], args[3])
+    elif method == 'addsendmember':
+      addSendMember(mlist, args[2], args[3])
     elif method == 'delmember':
       delMember(mlist, args[2])
     elif method == 'getadmins':

@@ -63,7 +63,7 @@ Mailman9.prototype.removeList = function (listName, callback) {
 
 Mailman9.prototype.addAdmin = function (listName, email, callback) {
   writeLog('Add admin: ' + listName + ' ' + email);
-  var cmd = 'python mailman.py addadmin ' + listName + ' ' + email;
+  var cmd = 'python mailman9.py addadmin ' + listName + ' ' + email;
   var listsCmd = child_process.exec(cmd, function (err) {
     callback(err);
   });
@@ -71,7 +71,7 @@ Mailman9.prototype.addAdmin = function (listName, email, callback) {
 
 Mailman9.prototype.delAdmin = function (listName, email, callback) {
   writeLog('Delete admin: ' + listName + ' ' + email);
-  var cmd = 'python mailman.py deladmin ' + listName + ' ' + email;
+  var cmd = 'python mailman9.py deladmin ' + listName + ' ' + email;
   var listsCmd = child_process.exec(cmd, function (err) {
     callback(err);
   });
@@ -82,7 +82,18 @@ Mailman9.prototype.addMember = function (listName, fullname, email, callback) {
   if (!fullname) {
     fullname = email;
   }
-  var cmd = 'python mailman.py addmember ' + listName + ' ' + fullname + ' ' + email;
+  var cmd = 'python mailman9.py addmember ' + listName + ' ' + fullname + ' ' + email;
+  var listsCmd = child_process.exec(cmd, function (err) {
+    callback(err);
+  });
+};
+
+Mailman9.prototype.addSendMember = function (listName, fullname, email, callback) {
+  writeLog('Add send member: ' + listName + ' ' + email);
+  if (!fullname) {
+    fullname = email;
+  }
+  var cmd = 'python mailman9.py addsendmember ' + listName + ' ' + fullname + ' ' + email;
   var listsCmd = child_process.exec(cmd, function (err) {
     callback(err);
   });
@@ -90,7 +101,7 @@ Mailman9.prototype.addMember = function (listName, fullname, email, callback) {
 
 Mailman9.prototype.delMember = function (listName, email, callback) {
   writeLog('Delete member: ' + listName + ' ' + email);
-  var cmd = 'python mailman.py delmember ' + listName + ' ' + email;
+  var cmd = 'python mailman9.py delmember ' + listName + ' ' + email;
   var listsCmd = child_process.exec(cmd, function (err) {
     callback(err);
   });
@@ -222,7 +233,7 @@ mailman9.on('configlist', function (group) {
 });
 
 mailman9.on('addnewlistadmin', function (group) {
-  var cmd = 'python mailman.py getadmins ' + group.name;
+  var cmd = 'python mailman9.py getadmins ' + group.name;
   var listsCmd = child_process.exec(cmd, function (err, stdout) {
     var existingAdmins = stdout.split('\n');
     existingAdmins = existingAdmins.slice(0, existingAdmins.length - 1);
@@ -281,7 +292,7 @@ mailman9.on('deloldlistadmin', function (group, existingAdmins) {
 });
 
 mailman9.on('addnewlistmember', function (group) {
-  var cmd = 'python mailman.py getmembers ' + group.name;
+  var cmd = 'python mailman9.py getmembers ' + group.name;
   var listsCmd = child_process.exec(cmd, function (err, stdout) {
     var existingMembers = stdout.split('\n');
     existingMembers = existingMembers.slice(0, existingMembers.length - 1);
@@ -329,6 +340,36 @@ mailman9.on('deloldlistmember', function (group, existingMembers) {
         }
       });
     }
+  });
+
+  mailman9.emit('addsendlistmember', group);
+});
+
+mailman9.on('addsendlistmember', function (group) {
+  var cmd = 'python mailman9.py getmembers ' + group.name;
+  var listsCmd = child_process.exec(cmd, function (err, stdout) {
+    var existingMembers = stdout.split('\n');
+    existingMembers = existingMembers.slice(0, existingMembers.length - 1);
+    if (!group.allUsers) {
+      group.allUsers = [];
+    }
+    group.allUsers.forEach(function (userName) {
+      var user = mailman9.usersMap[userName];
+      if (!user.emails) {
+        return writeLog('Error: No other emails address in ' + user.name);
+      }
+      user.emails.forEach(function (sendEmail) {
+         sendEmail = sendEmail.toLowerCase();
+         if (!inArray(existingMembers, sendEmail)) {
+           // not in existing members
+           mailman9.addSendMember(group.name, user.fullname, sendEmail, function (err) {
+             if (err) {
+               writeLog(err);
+             }
+           });
+         }
+      });
+    });
   });
 });
 

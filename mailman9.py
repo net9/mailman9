@@ -1,6 +1,7 @@
 import sys
 sys.path.append('/usr/lib/mailman')
 from Mailman import MailList
+from Mailman import MemberAdaptor
 
 class UserDesc:
   def __init__(self, userTitle, email):
@@ -10,18 +11,23 @@ class UserDesc:
 def getMembers(mlist):
   members = mlist.getRegularMemberKeys()
   for member in members:
-    print member
+    if mlist.getDeliveryStatus(member) == MemberAdaptor.ENABLED:
+      print member
 
 def addMember(mlist, userTitle, email):
-  userdesc = UserDesc(userTitle, email)
-  mlist.ApprovedAddMember(userdesc, ack=False, admin_notif=False)
+  if mlist.isMember(email):
+    mlist.setDeliveryStatus(email, MemberAdaptor.ENABLED)
+    mlist.setMemberName(email, userTitle)
+  else:
+    userdesc = UserDesc(userTitle, email)
+    mlist.ApprovedAddMember(userdesc, ack=False, admin_notif=False)
   mlist.Save()
   mlist.Unlock()
 
 def addSendMember(mlist, userTitle, email):
   userdesc = UserDesc(userTitle, email)
   mlist.ApprovedAddMember(userdesc, ack=False, admin_notif=False)
-  mlist.setDeliveryStatus(email, 1)
+  mlist.setDeliveryStatus(email, MemberAdaptor.UNKNOWN)
   mlist.Save()
   mlist.Unlock()
 

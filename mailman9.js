@@ -331,6 +331,7 @@ mailman9.on('deloldlistmember', function (group, existingMembers) {
   var allEmails = group.allUsers.map(function (userName) {
     return mailman9.usersMap[userName].email;
   });
+  var done = 0;
   existingMembers.forEach(function (userName) {
     if (!inArray(allEmails, userName)) {
       // existing member not in users
@@ -338,11 +339,18 @@ mailman9.on('deloldlistmember', function (group, existingMembers) {
         if (err) {
           writeLog(err);
         }
+        done++;
+        if (done == existingMembers.length) {
+          mailman9.emit('addsendlistmember', group);
+          done++;
+        }
       });
     }
+    else
+      done++;
   });
-
-  mailman9.emit('addsendlistmember', group);
+  if (done == existingMembers.length)
+    mailman9.emit('addsendlistmember', group);
 });
 
 mailman9.on('addsendlistmember', function (group) {
